@@ -8,66 +8,49 @@ use std::time::Duration;
 
 const WINDOW_WIDTH: u32 = 1000;
 const WINDOW_HEIGHT: u32 = 800;
-const VEHICLE_SIZE: u32 = 40;
-const VEHICLE_SPEED: i32 = 2;
-const ROAD_WIDTH: u32 = 140;
-const LANE_WIDTH: u32 = 40;
+const VEHICLE_SIZE: u32 =40;
+const VEHICLE_SPEED: f32 = 2.0;
+const ROAD_WIDTH: u32 = 120;
+const LANE_WIDTH: u32 = 30;
 const CENTER_X: i32 = (WINDOW_WIDTH / 2) as i32;
 const CENTER_Y: i32 = (WINDOW_HEIGHT / 2) as i32;
 
-#[derive(Clone, Copy, Debug)]
-enum Direction {
-    North,
-    South,
-    East,
-    West,
-}
 
 #[derive(Clone)]
 struct Vehicle {
     x: f32,
     y: f32,
-    direction: Direction,
+    direction: String,
     color: Color,
 }
 
 impl Vehicle {
-    fn new(direction: Direction) -> Self {
+    fn new(direction: &str) -> Self {
         let (x, y) = match direction {
-            Direction::North => (
-                CENTER_X as f32 - LANE_WIDTH as f32 / 2.0, 
-                WINDOW_HEIGHT as f32 - 50.0
-            ),
-            Direction::South => (
-                CENTER_X as f32 + LANE_WIDTH as f32 / 2.0, 
-                50.0
-            ),
-            Direction::East => (
-                50.0, 
-                CENTER_Y as f32 - LANE_WIDTH as f32 / 2.0
-            ),
-            Direction::West => (
-                WINDOW_WIDTH as f32 - 50.0, 
-                CENTER_Y as f32 + LANE_WIDTH as f32 / 2.0
-            ),
-        };
-////////////////////////cars////////////////
-        let color = match direction {
-            Direction::North => Color::RGB(255, 100, 100),
-            Direction::South => Color::RGB(100, 255, 100),
-            Direction::East => Color::RGB(100, 100, 255),
-            Direction::West => Color::RGB(255, 255, 100),
+            "North" => (CENTER_X as f32 - LANE_WIDTH as f32, WINDOW_HEIGHT as f32 - 50.0),
+            "South" => (CENTER_X as f32 + LANE_WIDTH as f32, 50.0),
+            "East"  => (50.0, CENTER_Y as f32 + LANE_WIDTH as f32),
+            "West"  => (WINDOW_WIDTH as f32 - 50.0, CENTER_Y as f32 - LANE_WIDTH as f32),
+            _ => (0.0, 0.0), 
         };
 
-        Self { x, y, direction, color }
+        let color = match direction {
+            "North" => Color::RGB(255, 100, 100),
+            "South" => Color::RGB(100, 255, 100),
+            "East"  => Color::RGB(100, 100, 255),
+            "West"  => Color::RGB(255, 255, 100),
+            _ => Color::RGB(255, 255, 255),
+        };
+        Self { x, y, direction: direction.to_string(), color }
     }
 
     fn update(&mut self) {
-        match self.direction {
-            Direction::North => self.y -= VEHICLE_SPEED as f32,
-            Direction::South => self.y += VEHICLE_SPEED as f32,
-            Direction::East => self.x += VEHICLE_SPEED as f32,
-            Direction::West => self.x -= VEHICLE_SPEED as f32,
+        match self.direction.as_str() {
+            "North" => self.y -= VEHICLE_SPEED,
+            "South" => self.y += VEHICLE_SPEED,
+            "East"  => self.x += VEHICLE_SPEED,
+            "West"  => self.x -= VEHICLE_SPEED,
+            _ => {}
         }
     }
 
@@ -78,8 +61,8 @@ impl Vehicle {
 
     fn get_rect(&self) -> Rect {
         Rect::new(
-            self.x as i32 - VEHICLE_SIZE as i32 / 2,
-            self.y as i32 - VEHICLE_SIZE as i32 / 2,
+            self.x as i32 - (VEHICLE_SIZE / 2) as i32,
+            self.y as i32 - (VEHICLE_SIZE / 2) as i32,
             VEHICLE_SIZE,
             VEHICLE_SIZE,
         )
@@ -99,10 +82,10 @@ impl TrafficSimulation {
         }
     }
 
-    fn spawn_vehicle(&mut self, direction: Direction) {
+    fn spawn_vehicle(&mut self, direction: &str) {
         if self.spawn_cooldown == 0 {
             self.vehicles.push(Vehicle::new(direction));
-            self.spawn_cooldown = 20;
+            self.spawn_cooldown = 50;
         }
     }
 
@@ -114,13 +97,13 @@ impl TrafficSimulation {
         for vehicle in &mut self.vehicles {
             vehicle.update();
         }
-
         self.vehicles.retain(|vehicle| !vehicle.is_off_screen());
     }
 
     fn render(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
+
         self.draw_roads(canvas)?;
 
         for vehicle in &self.vehicles {
@@ -133,33 +116,7 @@ impl TrafficSimulation {
     }
 
     fn draw_roads(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
-        let road_color = Color::RGB(0, 0, 0);
         let line_color = Color::RGB(255, 255, 255);
-        let center_color = Color::RGB(0, 0, 0);
-
-        canvas.set_draw_color(road_color);
-        canvas.fill_rect(Rect::new(
-            0,
-            CENTER_Y - ROAD_WIDTH as i32 / 2,
-            WINDOW_WIDTH,
-            ROAD_WIDTH,
-        ))?;
-
-        canvas.set_draw_color(road_color);
-        canvas.fill_rect(Rect::new(
-            CENTER_X - ROAD_WIDTH as i32 / 2,
-            0,
-            ROAD_WIDTH,
-            WINDOW_HEIGHT,
-        ))?;
-
-        canvas.set_draw_color(center_color);
-        canvas.fill_rect(Rect::new(
-            CENTER_X - ROAD_WIDTH as i32 / 2,
-            CENTER_Y - ROAD_WIDTH as i32 / 2,
-            ROAD_WIDTH,
-            ROAD_WIDTH,
-        ))?;
 
         canvas.set_draw_color(line_color);
         for x in (0..WINDOW_WIDTH).step_by(30) {
@@ -199,13 +156,9 @@ fn main() -> Result<(), String> {
         .window("Traffic Simulation", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .build()
-        .expect("could not initialize video subsystem");
+        .expect("Could not create window");
 
-    let mut canvas = window
-        .into_canvas()
-        .build()
-        .expect("could not make a canvas");
-
+    let mut canvas = window.into_canvas().build().expect("Could not create canvas");
     let mut event_pump = sdl_context.event_pump()?;
     let mut simulation = TrafficSimulation::new();
 
@@ -216,16 +169,17 @@ fn main() -> Result<(), String> {
                 Event::KeyDown { keycode: Some(keycode), .. } => {
                     match keycode {
                         Keycode::Escape => break 'running,
-                        Keycode::Up => simulation.spawn_vehicle(Direction::North),
-                        Keycode::Down => simulation.spawn_vehicle(Direction::South),
-                        Keycode::Right => simulation.spawn_vehicle(Direction::East),
-                        Keycode::Left => simulation.spawn_vehicle(Direction::West),
+                        Keycode::Up     => simulation.spawn_vehicle("North"),
+                        Keycode::Down   => simulation.spawn_vehicle("South"),
+                        Keycode::Right  => simulation.spawn_vehicle("East"),
+                        Keycode::Left   => simulation.spawn_vehicle("West"),
                         _ => {}
                     }
                 },
                 _ => {}
             }
         }
+
         simulation.update();
         simulation.render(&mut canvas)?;
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
