@@ -13,6 +13,7 @@ const VEHICLE_SIZE: u32 = 40;
 const VEHICLE_SPEED: f32 = 2.0;
 const ROAD_WIDTH: u32 = 120;
 const LANE_WIDTH: u32 = 30;
+const LIGHT_SIZE: u32 = 30; 
 const CENTER_X: i32 = (WINDOW_WIDTH / 2) as i32;
 const CENTER_Y: i32 = (WINDOW_HEIGHT / 2) as i32;
 
@@ -110,6 +111,7 @@ impl TrafficSimulation {
         canvas.clear();
         // println!("{:?}",canvas);
         self.draw_roads(canvas)?;
+        self.draw_traffic_lights(canvas)?;
 
         for vehicle in &self.vehicles {
             canvas.set_draw_color(vehicle.color);
@@ -151,6 +153,47 @@ impl TrafficSimulation {
 
         Ok(())
     }
+
+    fn draw_traffic_lights(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
+        canvas.set_draw_color(Color::RGB(255, 0, 0));
+        let half_road = ROAD_WIDTH as i32 / 2;
+        
+        let lights = [
+            // Top-left
+            Rect::new(
+                CENTER_X - half_road - LIGHT_SIZE as i32,
+                CENTER_Y - half_road - LIGHT_SIZE as i32,
+                LIGHT_SIZE,
+                LIGHT_SIZE
+            ),
+            // Top-right
+            Rect::new(
+                CENTER_X + half_road,
+                CENTER_Y - half_road - LIGHT_SIZE as i32,
+                LIGHT_SIZE,
+                LIGHT_SIZE
+            ),
+            // Bottom-left
+            Rect::new(
+                CENTER_X - half_road - LIGHT_SIZE as i32,
+                CENTER_Y + half_road,
+                LIGHT_SIZE,
+                LIGHT_SIZE
+            ),
+            // Bottom-right
+            Rect::new(
+                CENTER_X + half_road,
+                CENTER_Y + half_road,
+                LIGHT_SIZE,
+                LIGHT_SIZE
+            ),
+        ];
+
+        for light in &lights {
+            canvas.fill_rect(*light)?;
+        }
+        Ok(())
+    }
 }
 
 fn main() -> Result<(), String> {
@@ -158,7 +201,7 @@ fn main() -> Result<(), String> {
     let video_subsystem = sdl_context.video()?;
 
     let window = video_subsystem
-        .window("Traffic Simulation", WINDOW_WIDTH, WINDOW_HEIGHT)
+        .window("hhhhh", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .build()
         .expect("Could not create window");
