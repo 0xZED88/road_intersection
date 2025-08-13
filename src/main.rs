@@ -27,18 +27,18 @@ struct Vehicle {
 impl Vehicle {
     fn new(direction: &str) -> Self {
         let (x, y) = match direction {
-            "North" => (CENTER_X as f32 - LANE_WIDTH as f32, WINDOW_HEIGHT as f32 - 50.0),
-            "South" => (CENTER_X as f32 + LANE_WIDTH as f32, 50.0),
-            "East"  => (50.0, CENTER_Y as f32 + LANE_WIDTH as f32),
-            "West"  => (WINDOW_WIDTH as f32 - 50.0, CENTER_Y as f32 - LANE_WIDTH as f32),
+            "up" => (CENTER_X as f32 - LANE_WIDTH as f32, WINDOW_HEIGHT as f32 ),
+            "down" => (CENTER_X as f32 + LANE_WIDTH as f32, 0.0),
+            "right"  => (0.0, CENTER_Y as f32 + LANE_WIDTH as f32),
+            "left"  => (WINDOW_WIDTH as f32 , CENTER_Y as f32 - LANE_WIDTH as f32),
             _ => (0.0, 0.0), 
         };
 
         let color = match direction {
-            "North" => Color::RGB(255, 100, 100),
-            "South" => Color::RGB(100, 255, 100),
-            "East"  => Color::RGB(100, 100, 255),
-            "West"  => Color::RGB(255, 255, 100),
+            "up" => Color::RGB(255, 100, 100),
+            "down" => Color::RGB(100, 255, 100),
+            "right"  => Color::RGB(100, 100, 255),
+            "left"  => Color::RGB(255, 255, 100),
             _ => Color::RGB(255, 255, 255),
         };
         Self { x, y, direction: direction.to_string(), color }
@@ -46,10 +46,10 @@ impl Vehicle {
 
     fn update(&mut self) {
         match self.direction.as_str() {
-            "North" => self.y -= VEHICLE_SPEED,
-            "South" => self.y += VEHICLE_SPEED,
-            "East"  => self.x += VEHICLE_SPEED,
-            "West"  => self.x -= VEHICLE_SPEED,
+            "up" => self.y -= VEHICLE_SPEED,
+            "down" => self.y += VEHICLE_SPEED,
+            "right"  => self.x += VEHICLE_SPEED,
+            "left"  => self.x -= VEHICLE_SPEED,
             _ => {}
         }
     }
@@ -85,7 +85,7 @@ impl TrafficSimulation {
     fn spawn_vehicle(&mut self, direction: &str) {
         if self.spawn_cooldown == 0 {
             self.vehicles.push(Vehicle::new(direction));
-            self.spawn_cooldown = 50;
+            self.spawn_cooldown = 30;
         }
     }
 
@@ -103,7 +103,7 @@ impl TrafficSimulation {
     fn render(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
-
+        // println!("{:?}",canvas);
         self.draw_roads(canvas)?;
 
         for vehicle in &self.vehicles {
@@ -169,10 +169,10 @@ fn main() -> Result<(), String> {
                 Event::KeyDown { keycode: Some(keycode), .. } => {
                     match keycode {
                         Keycode::Escape => break 'running,
-                        Keycode::Up     => simulation.spawn_vehicle("North"),
-                        Keycode::Down   => simulation.spawn_vehicle("South"),
-                        Keycode::Right  => simulation.spawn_vehicle("East"),
-                        Keycode::Left   => simulation.spawn_vehicle("West"),
+                        Keycode::Up     => simulation.spawn_vehicle("up"),
+                        Keycode::Down   => simulation.spawn_vehicle("down"),
+                        Keycode::Right  => simulation.spawn_vehicle("right"),
+                        Keycode::Left   => simulation.spawn_vehicle("left"),
                         _ => {}
                     }
                 },
